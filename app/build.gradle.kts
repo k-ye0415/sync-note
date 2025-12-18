@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.jin.syncnote"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.jin.syncnote"
