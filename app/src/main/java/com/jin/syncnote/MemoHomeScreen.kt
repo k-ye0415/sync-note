@@ -2,6 +2,7 @@ package com.jin.syncnote
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateOffsetAsState
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -29,7 +30,6 @@ import androidx.compose.material.icons.sharp.FavoriteBorder
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonColors
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -121,7 +121,7 @@ fun MemoHomeScreen() {
             BottomBar(
                 mode = Mode.ALL,
                 onModeChange = { viewMode = it },
-                onClick = { /* add */ },
+                onAddMemoClick = { /* add */ },
             )
         }
     }
@@ -179,8 +179,10 @@ fun buildUiList(memos: List<Memo>): List<MemoUi> {
 fun BottomBar(
     mode: Mode,
     onModeChange: (Mode) -> Unit,
-    onClick: () -> Unit,
+    onAddMemoClick: () -> Unit,
 ) {
+
+    // CHANGE MODE
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -194,11 +196,13 @@ fun BottomBar(
                 onSelected = onModeChange
             )
         }
+
+        // ADD MEMO
         Box(
             modifier = Modifier.align(Alignment.BottomEnd),
         ) {
             IconButton(
-                onClick = {},
+                onClick = onAddMemoClick,
                 modifier = Modifier.size(48.dp),
                 colors = IconButtonDefaults.iconButtonColors(
                     containerColor = Color.LightGray,
@@ -226,25 +230,25 @@ private fun ModeSegment(
             .padding(4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        ModeChip(
+        ModeItem(
             text = Mode.YEAR.label,
             isSelected = selected == Mode.YEAR,
             onClick = { onSelected(Mode.YEAR) }
         )
         Spacer(Modifier.width(4.dp))
-        ModeChip(
+        ModeItem(
             text = Mode.MONTH.label,
             isSelected = selected == Mode.MONTH,
             onClick = { onSelected(Mode.MONTH) }
         )
         Spacer(Modifier.width(4.dp))
-        ModeChip(
+        ModeItem(
             text = Mode.WEEK.label,
             isSelected = selected == Mode.WEEK,
             onClick = { onSelected(Mode.WEEK) }
         )
         Spacer(Modifier.width(4.dp))
-        ModeChip(
+        ModeItem(
             text = Mode.ALL.label,
             isSelected = selected == Mode.ALL,
             onClick = { onSelected(Mode.ALL) }
@@ -253,7 +257,7 @@ private fun ModeSegment(
 }
 
 @Composable
-private fun ModeChip(
+private fun ModeItem(
     text: String,
     isSelected: Boolean,
     onClick: () -> Unit,
