@@ -1,19 +1,22 @@
 package com.jin.syncnote
 
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -23,9 +26,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.sharp.Add
 import androidx.compose.material.icons.sharp.Favorite
 import androidx.compose.material.icons.sharp.FavoriteBorder
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonColors
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -112,69 +117,12 @@ fun MemoHomeScreen() {
                     }
                 }
             }
-            val interactionSource = remember { MutableInteractionSource() }
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(vertical = 10.dp)
-                    .padding(end = 20.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(30.dp))
-                        .background(Color.LightGray)
-                        .clickable(interactionSource = interactionSource, indication = null, onClick = { })
-                        .indication(interactionSource, rememberRipple(color = Color.Blue)),
-                ) {
-                    Icon(Icons.Sharp.Add, contentDescription = "", modifier = Modifier.size(40.dp))
-                }
-            }
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(vertical = 10.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(30.dp))
-                        .background(Color.LightGray),
-                ) {
-                    Row {
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .padding(horizontal = 10.dp, vertical = 14.dp)
-                                .background(Color.Transparent)
-                        ) {
-                            Text("연")
-                        }
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .padding(horizontal = 10.dp, vertical = 14.dp)
-                                .background(Color.Transparent)
-                        ) {
-                            Text("월")
-                        }
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .padding(horizontal = 10.dp, vertical = 14.dp)
-                                .background(Color.Transparent)
-                        ) {
-                            Text("주")
-                        }
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .padding(horizontal = 10.dp, vertical = 14.dp)
-                                .background(Color.Transparent)
-                        ) {
-                            Text("전체")
-                        }
-                    }
-                }
-            }
+            var viewMode = Mode.ALL // temporary
+            BottomBar(
+                mode = Mode.ALL,
+                onModeChange = { viewMode = it },
+                onClick = { /* add */ },
+            )
         }
     }
 }
@@ -227,9 +175,122 @@ fun buildUiList(memos: List<Memo>): List<MemoUi> {
         }
 }
 
+@Composable
+fun BottomBar(
+    mode: Mode,
+    onModeChange: (Mode) -> Unit,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+    ) {
+        Box(
+            modifier = Modifier.align(Alignment.BottomCenter)
+        ) {
+            ModeSegment(
+                selected = mode,
+                onSelected = onModeChange
+            )
+        }
+        Box(
+            modifier = Modifier.align(Alignment.BottomEnd),
+        ) {
+            IconButton(
+                onClick = {},
+                modifier = Modifier.size(48.dp),
+                colors = IconButtonDefaults.iconButtonColors(
+                    containerColor = Color.LightGray,
+                    contentColor = Color.White,
+                ),
+            ) {
+                Icon(
+                    imageVector = Icons.Sharp.Add,
+                    contentDescription = "add memo",
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ModeSegment(
+    selected: Mode,
+    onSelected: (Mode) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(Color.LightGray)
+            .padding(4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        ModeChip(
+            text = Mode.YEAR.label,
+            isSelected = selected == Mode.YEAR,
+            onClick = { onSelected(Mode.YEAR) }
+        )
+        Spacer(Modifier.width(4.dp))
+        ModeChip(
+            text = Mode.MONTH.label,
+            isSelected = selected == Mode.MONTH,
+            onClick = { onSelected(Mode.MONTH) }
+        )
+        Spacer(Modifier.width(4.dp))
+        ModeChip(
+            text = Mode.WEEK.label,
+            isSelected = selected == Mode.WEEK,
+            onClick = { onSelected(Mode.WEEK) }
+        )
+        Spacer(Modifier.width(4.dp))
+        ModeChip(
+            text = Mode.ALL.label,
+            isSelected = selected == Mode.ALL,
+            onClick = { onSelected(Mode.ALL) }
+        )
+    }
+}
+
+@Composable
+private fun ModeChip(
+    text: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+) {
+    val bgAlpha by animateFloatAsState(
+        targetValue = if (isSelected) 0.22f else 0.0f,
+        label = "chipBgAlpha"
+    )
+    val textAlpha by animateFloatAsState(
+        targetValue = if (isSelected) 1.0f else 0.65f,
+        label = "chipTextAlpha"
+    )
+    val interactionSource = remember { MutableInteractionSource() }
+    val indication = LocalIndication.current
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(Color.White.copy(alpha = bgAlpha))
+            .clickable(
+                interactionSource = interactionSource,
+                indication = indication,   // ✅ 여기서만 지정
+                onClick = onClick
+            )
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            color = Color.White.copy(alpha = textAlpha),
+            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+        )
+    }
+}
+
 // temp
-enum class Mode {
-    YEAR, MONTH, WEEK, ALL
+enum class Mode(val label: String) {
+    YEAR("연"), MONTH("월"), WEEK("주"), ALL("전체")
 }
 
 sealed interface MemoUi {
