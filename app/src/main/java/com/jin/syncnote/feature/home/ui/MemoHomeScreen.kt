@@ -1,8 +1,7 @@
-package com.jin.syncnote
+package com.jin.syncnote.feature.home.ui
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.animateOffsetAsState
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -35,6 +34,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -44,17 +44,24 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.jin.syncnote.ui.theme.SyncNoteTheme
+import com.jin.syncnote.feature.memo.domain.HomeViewModel
+import com.jin.syncnote.feature.memo.domain.Memo
+import com.jin.syncnote.ui.state.UiState
 import java.time.LocalDate
 
 @Composable
-fun MemoHomeScreen() {
-    val uiList = buildUiList(dummyMemo)
+fun MemoHomeScreen(homeViewModel: HomeViewModel) {
+    val memoListState by homeViewModel.memoListState.collectAsState()
+
+    val memoList = when (val state = memoListState) {
+        is UiState.Success -> buildUiList(state.data)
+        // TODO loading
+        else -> emptyList() // TODO ERROR
+    }
     val gridState = rememberLazyGridState()
     val bottomThreshold = 6
-    val isNearBottom by remember(uiList.size) {
+    val isNearBottom by remember(memoList.size) {
         derivedStateOf {
             val layout = gridState.layoutInfo
             val lastVisibleIndex = layout.visibleItemsInfo.lastOrNull()?.index ?: 0
@@ -68,9 +75,9 @@ fun MemoHomeScreen() {
         label = "gridBottomPadding"
     )
 
-    LaunchedEffect(uiList.size) {
-        if (uiList.isNotEmpty() && isNearBottom) {
-            gridState.scrollToItem(uiList.lastIndex) // 최초는 scrollToItem이 더 안정적
+    LaunchedEffect(memoList.size) {
+        if (memoList.isNotEmpty() && isNearBottom) {
+            gridState.scrollToItem(memoList.lastIndex) // 최초는 scrollToItem이 더 안정적
         }
     }
 
@@ -94,21 +101,15 @@ fun MemoHomeScreen() {
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(
-                    count = uiList.size,
+                    count = memoList.size,
                     span = { index ->
-                        when (uiList[index]) {
+                        when (memoList[index]) {
                             is MemoUi.Header -> GridItemSpan(maxLineSpan)
                             is MemoUi.Item -> GridItemSpan(1)
                         }
-                    },
-                    key = { index ->
-                        when (val ui = uiList[index]) {
-                            is MemoUi.Header -> "h-${ui.date}"
-                            is MemoUi.Item -> "m-${ui.memo.id}"
-                        }
                     }
                 ) {
-                    when (val memo = uiList[it]) {
+                    when (val memo = memoList[it]) {
                         is MemoUi.Header -> {
                             Text(memo.date.toString()) // TODO ui
                         }
@@ -153,14 +154,6 @@ fun MemoItem(memo: Memo) {
             modifier = Modifier.padding(start = 10.dp, end = 10.dp, top = 4.dp, bottom = 4.dp),
             overflow = TextOverflow.Ellipsis
         )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun HomeScreenPreview() {
-    SyncNoteTheme() {
-        MemoHomeScreen()
     }
 }
 
@@ -303,19 +296,10 @@ sealed interface MemoUi {
 }
 
 // dummy
-data class Memo(
-    val id: Int,
-    val title: String,
-    val content: String,
-    val writeTime: LocalDate,
-    val updateTime: LocalDate,
-    val favorite: Boolean
-)
-
 val dummyMemo: List<Memo> = listOf(
     // 오늘
     Memo(
-        id = 1001,
+        id = null,
         title = "회의 메모",
         content = "다음 스프린트 목표: 메모 리스트 그룹화(날짜 헤더), 즐겨찾기 필터, 검색 UX 정리.",
         writeTime = LocalDate.now(),
@@ -323,7 +307,7 @@ val dummyMemo: List<Memo> = listOf(
         favorite = true
     ),
     Memo(
-        id = 1002,
+        id = null,
         title = "해야 할 일",
         content = "1) AAPT2 이슈 재현 케이스 기록\n2) Compose Grid 섹션 헤더 적용\n3) 테스트 데이터 정리",
         writeTime = LocalDate.now(),
@@ -331,7 +315,7 @@ val dummyMemo: List<Memo> = listOf(
         favorite = false
     ),
     Memo(
-        id = 1003,
+        id = null,
         title = "아이디어",
         content = "메모 카드에 태그(Work/Personal) 추가하면 필터 UI 만들기 쉬울 듯.",
         writeTime = LocalDate.now(),
@@ -341,7 +325,7 @@ val dummyMemo: List<Memo> = listOf(
 
     // 어제
     Memo(
-        id = 1004,
+        id = null,
         title = "맛집 리스트",
         content = "공덕역 근처: 국물요리/매콤한 메뉴 위주로 다시 찾아보기.",
         writeTime = LocalDate.now().minusDays(1),
@@ -349,7 +333,7 @@ val dummyMemo: List<Memo> = listOf(
         favorite = false
     ),
     Memo(
-        id = 1005,
+        id = null,
         title = "영수증 정리",
         content = "카페: 아메리카노 4,800원 / 디저트 6,500원. 다음엔 멤버십 적립하기.",
         writeTime = LocalDate.now().minusDays(1),
@@ -359,7 +343,7 @@ val dummyMemo: List<Memo> = listOf(
 
     // 2일 전
     Memo(
-        id = 1006,
+        id = null,
         title = "운동 기록",
         content = "걷기 8,200보. 스트레칭 10분. 컨디션 괜찮았음.",
         writeTime = LocalDate.now().minusDays(2),
@@ -367,7 +351,7 @@ val dummyMemo: List<Memo> = listOf(
         favorite = true
     ),
     Memo(
-        id = 1007,
+        id = null,
         title = "독서 메모",
         content = "핵심은 ‘상태의 단일 소스(SSOT)’를 유지하는 것. UI는 상태를 렌더링한다.",
         writeTime = LocalDate.now().minusDays(2),
@@ -377,7 +361,7 @@ val dummyMemo: List<Memo> = listOf(
 
     // 5일 전
     Memo(
-        id = 1008,
+        id = null,
         title = "여행 준비",
         content = "사진 정리 + 일정표 확인. 이동 동선은 한 번 더 단순하게.",
         writeTime = LocalDate.now().minusDays(5),
@@ -385,7 +369,7 @@ val dummyMemo: List<Memo> = listOf(
         favorite = false
     ),
     Memo(
-        id = 1009,
+        id = null,
         title = "비밀번호 힌트",
         content = "테스트 계정/환경 변수 정리해두기. (실제 비밀번호는 저장하지 않기)",
         writeTime = LocalDate.now().minusDays(5),
@@ -395,7 +379,7 @@ val dummyMemo: List<Memo> = listOf(
 
     // 8일 전
     Memo(
-        id = 1010,
+        id = null,
         title = "프로젝트 메모",
         content = "Local Memo Sync App: Repository → UseCase → ViewModel 흐름 정리하고, 저장소는 DataStore + Room 조합 고려.",
         writeTime = LocalDate.now().minusDays(8),
@@ -403,7 +387,7 @@ val dummyMemo: List<Memo> = listOf(
         favorite = true
     ),
     Memo(
-        id = 1011,
+        id = null,
         title = "디자인 체크",
         content = "카드 높이 고정: content는 minLines/maxLines로 3줄 고정하면 Grid 균일해짐.",
         writeTime = LocalDate.now().minusDays(8),
@@ -413,7 +397,7 @@ val dummyMemo: List<Memo> = listOf(
 
     // 14일 전
     Memo(
-        id = 1012,
+        id = null,
         title = "정리",
         content = "주간 회고: 잘한 점(꾸준함), 개선점(작업 단위 더 쪼개기), 다음 목표(헤더/필터/검색 완성).",
         writeTime = LocalDate.now().minusDays(14),
